@@ -1,0 +1,81 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MCKNIGHT — Pricing Calculator</title></head><body style="margin:0;background:#f6f5f1"><div id="mkapp">
+<style>
+#mkapp{font-family:Arial,sans-serif;background:#f6f5f1;color:#222;padding:18px;border-radius:12px;max-width:540px;margin:auto;font-size:14px}
+#mkapp *{box-sizing:border-box}
+#mkapp .brand{text-align:center;letter-spacing:5px;font-size:23px;font-family:Georgia,serif;margin:10px 0 5px}
+#mkapp .subtitle{text-align:center;font-size:10px;letter-spacing:3px;color:#777;margin-bottom:25px}
+#mkapp .panel{background:white;border:1px solid #e1dfd8;border-radius:10px;padding:15px;margin:12px 0}
+#mkapp h3{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#777;margin:0 0 15px}
+#mkapp label{display:block;font-size:12px;color:#666;margin-bottom:6px}
+#mkapp select,#mkapp input{font:inherit;color:#222;background:#fff;border:1px solid #dcdad4;border-radius:7px;padding:12px;width:100%;min-width:0}
+#mkapp .field{margin-bottom:14px}
+#mkapp .field:last-child{margin-bottom:0}
+#mkapp .line{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #efeee9}
+#mkapp .line:last-child{border:0}
+#mkapp .desc{flex:1;font-size:12px;line-height:1.5}
+#mkapp .amount{display:flex;align-items:center;width:116px;gap:6px;color:#777}
+#mkapp .amount input{text-align:right;padding:10px 8px}
+#mkapp .small{font-size:11px;color:#888}
+#mkapp .total{text-align:center;padding:17px 8px}
+#mkapp .total strong{font-size:30px;font-weight:500;display:block;margin:10px}
+#mkapp .result{background:#222b25;color:white;border-radius:10px;text-align:center;padding:24px 12px;margin-top:12px}
+#mkapp .result .price{font-size:44px;font-family:Georgia,serif;margin:12px 0}
+#mkapp .result .muted{color:#c5d0c6;font-size:12px}
+#mkapp .profit{display:flex;justify-content:space-between;padding:13px 2px;border-bottom:1px solid #ddd;font-size:12px}
+#mkapp button{font:inherit;cursor:pointer;padding:12px;border-radius:7px;border:1px solid #ccc;background:transparent;color:#333}
+#mkapp .actions{display:flex;gap:8px;margin-top:14px}
+#mkapp .actions button{flex:1}
+#mkapp details summary{cursor:pointer;font-size:12px;color:#666}
+#mkapp .notice{font-size:11px;line-height:1.5;color:#777;margin-top:12px}
+</style>
+<div class="brand">MCKNIGHT</div><div class="subtitle">PRICING CALCULATOR</div>
+<div class="panel"><div class="line"><div class="desc">Exchange rate<br><span class="small">€1 = NGN</span></div><div class="amount"><span>₦</span><input id="fx" type="number" min="1" value="1500"></div></div></div>
+<div class="panel"><h3>01 — Order configuration</h3><div class="field"><label>Client type</label><select id="client"><option>Diakanké</option><option>Non-Diakanké</option></select></div><div class="field"><label>Garment type</label><select id="garment"></select></div><div class="field"><label>Fabric supplier</label><select id="supplier"><option>Rume</option><option>McKnight — Paris</option><option>McKnight — Lagos</option><option>Client</option></select></div></div>
+<div class="panel"><h3>02 — Fabric & logistics</h3><div id="logistics"></div></div>
+<div class="panel"><h3>03 — Production</h3><div class="line"><div class="desc">Base production fee<br><span class="small">Based on garment type</span></div><div class="amount"><span>₦</span><input type="number" id="base" min="0" value="63000"></div></div></div>
+<div class="panel"><h3>04 — Auxiliary expenses</h3><div id="extras"></div></div>
+<div class="panel"><h3>05 — Total expenditure</h3><div class="total"><div id="breakdown" class="small"></div><strong id="cost">€57.00</strong><div class="small">Total cost in euros</div></div></div>
+<div class="result"><div style="font-size:11px;letter-spacing:1.8px">MINIMUM SELLING PRICE</div><div class="price" id="selling">€67.06</div><div class="muted" id="marginLabel">For a 15% profit margin</div></div>
+<div class="profit"><span>Expected profit</span><b id="profit"></b></div><div class="profit"><span>Suggested rounded price</span><b id="rounded"></b></div>
+<div class="panel"><details><summary>Pricing settings</summary><div style="margin-top:16px" class="field"><label>Diakanké profit margin (%)</label><input id="m1" type="number" min="0" max="99" value="15"></div><div class="field"><label>Non-Diakanké profit margin (%)</label><input id="m2" type="number" min="0" max="99" value="25"></div><div class="small" style="margin-bottom:10px">Default production fees (₦)</div><div id="fees"></div><div class="notice">Prototype defaults are illustrative. Changes apply to this session.</div></details></div>
+<div class="actions"><button id="reset">New calculation</button><button id="copy">Copy quotation</button></div><div id="feedback" class="notice" style="text-align:center"></div></div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const names=['Kaftan','Agbada','2-piece suit','3-piece suit','Jacket','Trousers','Shirt','Waistcoat','Boubou','Shorts'];
+const initial=[63000,95000,110000,135000,75000,25000,22000,25000,70000,18000];
+let fees=[...initial];
+$('garment').innerHTML=names.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join('');
+const logistics=[['Fabric → Lagos (5 yds)','EUR',''],['Fabric purchase in Paris (5 yds)','EUR',''],['Fabric purchase in Nigeria (5 yds)','NGN',''],['Outfit → Paris (1 kg)','EUR',15],['Paris → Client (1 kg)','EUR','']];
+const extras=['Extra embroidery','Charabia','CoCo','Beading','Stoning'];
+function line(name,id,currency,val,placeholder='N/A'){return '<div class="line"><div class="desc">'+name+'</div><div class="amount"><span>'+(currency==='EUR'?'€':'₦')+'</span><input id="'+id+'" type="number" min="0" step="any" placeholder="'+placeholder+'" value="'+val+'"></div></div>'}
+$('logistics').innerHTML=logistics.map((a,i)=>line(a[0],'l'+i,a[1],a[2])).join('');
+$('extras').innerHTML=extras.map((n,i)=>line(n,'e'+i,'NGN',0)).join('');
+$('fees').innerHTML=names.map((n,i)=>line(n,'f'+i,'NGN',fees[i],'0')).join('');
+const num=id=>Math.max(0,Number($(id).value)||0);
+const euro=n=>n.toLocaleString('en-IE',{style:'currency',currency:'EUR'});
+let current=0;
+function calculate(){
+const fx=num('fx');
+const ngn=num('base')+num('l2')+extras.reduce((a,n,i)=>a+num('e'+i),0);
+const eur=[0,1,3,4].reduce((a,i)=>a+num('l'+i),0);
+const margin=Math.min(99,num($('client').selectedIndex===0?'m1':'m2'));
+$('breakdown').textContent='₦'+ngn.toLocaleString('en-GB')+' + '+euro(eur);
+$('marginLabel').textContent='For a '+margin+'% profit margin';
+if(!fx){['cost','selling','profit','rounded'].forEach(id=>$(id).textContent='—');current=NaN;return}
+const cost=eur+ngn/fx;
+current=Math.ceil(cost/(1-margin/100)*100-1e-8)/100;
+$('cost').textContent=euro(cost);
+$('selling').textContent=euro(current);
+$('profit').textContent=euro(current-cost);
+$('rounded').textContent=euro(Math.ceil(current/5)*5);
+}
+$('garment').addEventListener('change',()=>{$('base').value=fees[Number($('garment').value)];calculate()});
+$('supplier').addEventListener('change',()=>{const s=$('supplier').selectedIndex;[0,1,2].forEach(i=>$('l'+i).value='');if(s===1){$('l0').value=15;$('l1').value=50}if(s===2)$('l2').value=30000;calculate()});
+names.forEach((n,i)=>$('f'+i).addEventListener('input',()=>{fees[i]=num('f'+i);if(Number($('garment').value)===i)$('base').value=fees[i];calculate()}));
+document.querySelectorAll('#mkapp input,#mkapp select').forEach(el=>el.addEventListener('input',calculate));
+$('reset').onclick=()=>{$('client').selectedIndex=0;$('garment').selectedIndex=0;$('supplier').selectedIndex=0;$('base').value=fees[0];logistics.forEach((a,i)=>$('l'+i).value=a[2]);extras.forEach((n,i)=>$('e'+i).value=0);$('feedback').textContent='';calculate()};
+$('copy').onclick=async()=>{if(!Number.isFinite(current))return;const quote='MCKNIGHT — '+names[Number($('garment').value)]+'\nSelling price: '+euro(Math.ceil(current/5)*5);try{await navigator.clipboard.writeText(quote);$('feedback').textContent='Quotation copied.'}catch(e){$('feedback').textContent=quote}};
+calculate();
+})();
+</script></body></html>
